@@ -8,6 +8,7 @@ function love.load()
   -- x, y, square dimension, number of columns
   board.initialize(origin_x, origin_y, dim, 8)
   board = board:create()
+  board:searchSquares(1)
 end
 
 function love.update()
@@ -17,4 +18,5 @@ end
 function love.draw()
   board:draw()
   board:fill()
+  board:drawCandidates()
 end
