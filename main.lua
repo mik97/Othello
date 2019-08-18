@@ -7,8 +7,8 @@ function love.load()
   origin_y = 50;
   dim = 70;
   
-  -- selected = {x, y} dove x è la colonna e y la riga
-  selected = {2,4} -- x (la colonna) e y (la riga)
+  -- selected = {x, y}: x is the column and y the row
+  selected = {2,4}
   
   board.initialize(origin_x, origin_y, dim, 8)
   board = board:create()
