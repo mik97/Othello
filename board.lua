@@ -37,7 +37,7 @@ end
 --B N
 function board.create(self)
   for i=1,dim do
-    self[i] = {}
+    self[i] = {} --rows
   end
     self[4][4] = 0
     self[5][5] = 0
@@ -60,30 +60,26 @@ function board.draw(self)
     end
 end
 
---add pieces to the board
-
+--add pieces to the board (refactored)
 function board.fill(self)
-  for i=1,dim do --columns
-    for j=1,dim do -- rows
-      if self[i][j] == 1 then
-          love.graphics.circle('fill', circle_x + dim*(j-1), circle_y + dim*(i-1), circleDim)
-          love.graphics.print(i ,circle_x + dim*(j-1), circle_y + dim*(i-1))
-      elseif self[i][j] == 0 then
-          love.graphics.circle('line', circle_x + dim*(j-1), circle_y + dim*(i-1), circleDim)
+  for i=1, col do --columns (x)
+    for j= 1, col do --rows (y)
+      if self[i][j] == 0 then --black
+        love.graphics.circle('line', circle_x + dim*(i-1), circle_y + dim*(j-1), circleDim)
+      elseif self[i][j] == 1 then --white
+        love.graphics.circle('fill', circle_x + dim*(i-1), circle_y + dim*(j-1), circleDim)
       end
     end
   end
 end
-
--- params: color -> int
 -- con ipairs ordine è assicurato (utilizzato quando index sono number), con pairs non è assicurato
-
 function board.searchSquares(self, color)
-  candidates = {}
-  for i=1, col do --cols
-    for j= 1, col do --rows
+  candidates = {} --vuoto
+  
+  for i=1, col do --cols (x)
+    for j= 1, col do --rows (y)
       if self[i][j] == color then
-        for k, _ in pairs(directions) do
+        for k, v in pairs(directions) do
           board:searchForDirection(i, j, color, k)
         end
       end
@@ -91,38 +87,34 @@ function board.searchSquares(self, color)
   end
 end
 
---add to candidates table coordinates of candidate squares
-function board.searchForDirection(self, cell_y, cell_x, color, dir)
+function board.searchForDirection(self, cell_x, cell_y, color, dir)
   local oppositeColor = (color + 1) % 2
-  local thereare = false;
--- il primo calcolo lo faccio
-  cell_y = cell_y + directions[dir][1] 
-  cell_x = cell_x + directions[dir][2]
+  local isValid = false;
+
+  cell_x = cell_x + directions[dir][1] 
+  cell_y = cell_y + directions[dir][2]
   if cell_x > 8 or cell_x < 1 or cell_y > 8 or cell_y < 1 then return false end
   
-  while self[cell_y][cell_x] == oppositeColor do
-  thereare = true
+  while self[cell_x][cell_y] == oppositeColor do
+  isValid = true
   
-  cell_y = cell_y + directions[dir][1] 
-  cell_x = cell_x + directions[dir][2]
+  cell_x = cell_x + directions[dir][1] 
+  cell_y = cell_y + directions[dir][2]
   
-  print(cell_y, cell_x)
+  --print(cell_y, cell_x)
   
   --controllo che non sia fuori la board (basta che una delle condizioni sia vera)
     if cell_x > 8 or cell_x < 1 or cell_y > 8 or cell_y <1 then 
-      print("è fuori board")
       return false
     end
   end
   
-  if thereare == true then
-      if self[cell_y][cell_x] == nil and cell_x <= 8 and cell_y <=8 then
-            table.insert(candidates, {cell_y, cell_x})
+  if isValid== true then
+      if self[cell_x][cell_y] == nil and cell_y <= 8 and cell_x <=8 then
+            table.insert(candidates, {cell_x, cell_y})
       end
     end
 end
-
-
 
 --draw candidates on the board
 function board:drawCandidates(self, color)
@@ -130,20 +122,22 @@ function board:drawCandidates(self, color)
   if color == 0 then love.graphics.setColor(1,0,0)
   else love.graphics.setColor(0,1,0) end
   for _, v in ipairs(candidates) do
-   love.graphics.rectangle('line', x + 10 + dim*(v[2]-1), y + 10 + dim*(v[1]-1), dim -20, dim-20)  
+   love.graphics.rectangle('line', x + 10 + dim*(v[1]-1), y + 10 + dim*(v[2]-1), dim -20, dim-20)  
   end
   love.graphics.setColor(1,1,1) --set color to white (default)
 end
 
 
-function printCandidates()
-  for _, v  in ipairs(candidates) do
-    print("x=",v[2],"y=",v[1])
+function printCandidates(table)
+  for _, v  in ipairs(table) do
+    print("x=",v[1],"y=",v[2])
   end
 end
 
+--le coordinate sono {x, y} aka {columns, row}
 function board.addPiece(self, coor, color)
   self[coor[1]][coor[2]] = color
+  board:revertPieces(coor, color)
 end
 
 
@@ -152,4 +146,35 @@ function board.isCandidate(self, coor)
     if (v[1] == coor[1] and v[2] == coor[2]) then return true end
   end
   return false
+end
+
+--coor = coordinata square dove si vuole inserire il pezzo
+function board.revertPieces (self, coor, color)
+  for k, v in pairs(directions) do
+    print(k)
+    board:revertForDirection(coor[1], coor[2], color, v)
+  end
+end
+
+function board.revertForDirection(self, cell_x, cell_y, color, dir)
+  local oppositeColor = (color + 1) % 2
+  local toRevert = {}
+  cell_x = cell_x + dir[1]
+  cell_y = cell_y + dir[2] 
+
+  if cell_x > 8 or cell_x < 1 or cell_y > 8 or cell_y < 1 then print("a") return false end
+
+  while self[cell_x][cell_y] == oppositeColor do
+    table.insert(toRevert, {cell_x, cell_y})
+    --passo alla square successiva in quella direzione
+    cell_x = cell_x + dir[1]
+    cell_y = cell_y + dir[2]
+    if cell_x > 8 or cell_x < 1 or cell_y > 8 or cell_y < 1 then print("a") return false end
+  end
+  if self[cell_x][cell_y] == color then
+    for _ , k in ipairs(toRevert) do
+      print("halo", k[1], k[2])
+      self[k[1]][k[2]] = color
+    end
+  end
 end

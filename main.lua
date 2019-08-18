@@ -7,11 +7,12 @@ function love.load()
   origin_y = 50;
   dim = 70;
   
-  selected = {1,1} --coordinate selected square (column, row)
+  -- selected = {x, y} dove x è la colonna e y la riga
+  selected = {2,4} -- x (la colonna) e y (la riga)
   
-  -- x, y, square dimension, number of columns
   board.initialize(origin_x, origin_y, dim, 8)
   board = board:create()
+  
   board:searchSquares(current_player)
 end
 
@@ -27,21 +28,23 @@ function love.draw()
 end
 
 function love.keypressed(key, scancode, isrepeat)
-  if key == "down" then
-    selected[1] = selected[1] + 1 
-  end
-  
-  if key == "up" then
-    selected[1] = selected[1]- 1
-  end
-  
+   
   if key == "left" then
-    selected[2] = selected[2] - 1
+    selected[1] = selected[1] - 1
   end
   
   if key == "right" then
-    selected[2] = selected[2] + 1
+    selected[1] = selected[1] + 1
+    
   end
+  if key == "down" then
+    selected[2] = selected[2] + 1 
+  end
+  
+  if key == "up" then
+    selected[2] = selected[2] - 1
+  end
+ 
   
   if key == "return" then
     if board:isCandidate(selected) then
@@ -55,6 +58,6 @@ end
 
 function drawSelected()
   love.graphics.setColor(0,1,1)
-  love.graphics.rectangle('line', origin_x + 20 + dim*(selected[2]-1), origin_y + 20 + dim*(selected[1]-1), dim -30, dim-30)  
+  love.graphics.rectangle('line', origin_x + 20 + dim*(selected[1]-1), origin_y + 20 + dim*(selected[2]-1), dim - 40, dim - 40)  
   love.graphics.setColor(1,1,1) --set color to white (default)
 end
