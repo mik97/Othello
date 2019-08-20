@@ -8,7 +8,7 @@ function love.load()
   dim = 70;
   
   -- selected = {x, y}: x is the column and y the row
-  selected = {2,4}
+  selected = {1,1}
   
   board.initialize(origin_x, origin_y, dim, 8)
   board = board:create()
@@ -30,19 +30,26 @@ end
 function love.keypressed(key, scancode, isrepeat)
    
   if key == "left" then
-    selected[1] = selected[1] - 1
+    if selected[1] > 1 then
+      selected[1] = selected[1] - 1
+    end
   end
   
   if key == "right" then
-    selected[1] = selected[1] + 1
-    
+    if selected[1] < 8 then
+      selected[1] = selected[1] + 1
+    end
   end
   if key == "down" then
-    selected[2] = selected[2] + 1 
+    if selected[2] < 8 then
+      selected[2] = selected[2] + 1 
+    end
   end
   
   if key == "up" then
-    selected[2] = selected[2] - 1
+    if selected[2] > 1 then
+      selected[2] = selected[2] - 1
+    end
   end
  
   
