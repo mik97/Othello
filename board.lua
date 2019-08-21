@@ -88,6 +88,8 @@ function board.searchSquares(self, color)
       end
     end
   end
+  
+  return candidates
 end
 
 -- candidate square search (direction based)
