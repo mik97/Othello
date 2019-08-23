@@ -3,6 +3,8 @@
 --matrix[col][row]
 board = {}
 
+pieces = {[0]= 2, [1]= 2}
+
 --direction table
 directions = {
   up = {0, -1},
@@ -132,6 +134,7 @@ end
 --coordinates are {x, y} aka {columns, row}
 function board:addPiece( coor, color)
   self[coor[1]][coor[2]] = color
+  pieces[color] = pieces[color] + 1 
   board:revertPieces(coor, color)
 end
 
@@ -165,6 +168,8 @@ function board:revertForDirection( cell_x, cell_y, color, dir)
   if checkSquare(cell_x, cell_y) and self[cell_x][cell_y] == color then
     for _ , k in ipairs(toRevert) do
       self[k[1]][k[2]] = color
+      pieces[color] = pieces[color] + 1 
+      pieces[oppositeColor] = pieces[oppositeColor] - 1 
     end
   end
 end
