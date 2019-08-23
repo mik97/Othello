@@ -23,7 +23,7 @@ end
 function love.draw()
   board:draw()
   board:fill()
-  board:drawCandidates()
+  board:drawCandidates(current_player)
   drawSelected()
 end
 
