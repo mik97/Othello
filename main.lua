@@ -1,4 +1,6 @@
 require("board")
+require("config")
+
 
 function love.load()
   love.window.maximize()
@@ -10,8 +12,9 @@ function love.load()
   -- selected = {x, y}: x is the column and y the row
   selected = {1,1}
   
-  board.initialize(origin_x, origin_y, dim, 8)
-  board = board:create()
+  config:set(origin_x, origin_y, dim, 8)
+  board = board:new()
+  board:initialize()
   
   board:searchSquares(current_player)
 end
@@ -55,7 +58,10 @@ function love.keypressed(key, scancode, isrepeat)
   
   if key == "return" then
     if board:isCandidate(selected) then
+      local pieces
       board:addPiece(selected, current_player)
+     
+
       current_player = (current_player + 1) % 2
       board:searchSquares(current_player)
      end
