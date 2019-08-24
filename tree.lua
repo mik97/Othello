@@ -3,7 +3,6 @@
 local PATH = (...):gsub('tree$','')
 local class = require (PATH .. 'class')
 
-
 local tree = class ()
 
 -- Tree initialization
