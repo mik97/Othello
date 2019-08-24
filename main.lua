@@ -10,7 +10,7 @@ function love.load()
   dim = 70;
   
   -- selected = {x, y}: x is the column and y the row
-  selected = {2,4}
+  selected = {1,1}
   
   board.initialize(origin_x, origin_y, dim, 8)
   board = board:create()
@@ -27,26 +27,33 @@ end
 function love.draw()
   board:draw()
   board:fill()
-  board:drawCandidates()
+  board:drawCandidates(current_player)
   drawSelected()
 end
 
 function love.keypressed(key, scancode, isrepeat)
    
   if key == "left" then
-    selected[1] = selected[1] - 1
+    if selected[1] > 1 then
+      selected[1] = selected[1] - 1
+    end
   end
   
   if key == "right" then
-    selected[1] = selected[1] + 1
-    
+    if selected[1] < 8 then
+      selected[1] = selected[1] + 1
+    end
   end
   if key == "down" then
-    selected[2] = selected[2] + 1 
+    if selected[2] < 8 then
+      selected[2] = selected[2] + 1 
+    end
   end
   
   if key == "up" then
-    selected[2] = selected[2] - 1
+    if selected[2] > 1 then
+      selected[2] = selected[2] - 1
+    end
   end
  
   
@@ -73,15 +80,14 @@ function buildTree(num, candidates)
   t:addNode('A',nil,0)
   
   if num%2 == 0 then
-    print('ok')
     if num/2 == 1 then
-      print('ok')
+      print('ok2')
       for i, candidate in ipairs(candidates) do
         t:addNode('B' .. i, 'A', candidate)
         print(t:getNode('B' .. i))
       end
     else
-      print('ok')
+      print('ok1')
       num = num/2
       buildTree(num, candidates)
     end
