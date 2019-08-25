@@ -33,6 +33,14 @@ function tree:getNode(name)
   end
 end
 
+function getChildParent(name)
+  for i, node in ipairs(self.nodes) do
+    for i, child in ipairs(node.children) do
+      if child.name == name then return child end
+    end
+  end
+end
+
 -- Checks if a given node is terminal (leaf) in the search tree
 function tree:isLeaf(node)
   return #node.children == 0
@@ -46,6 +54,17 @@ end
 -- Returns the node's children
 function tree:children(node)
   return node.children
+end
+
+-- Returns the node's parent
+function tree:parent(node)
+  return node.parent
+end
+
+function tree:getAllNodes()
+  for i, node in ipairs(self.nodes) do
+    print(node.name)
+  end
 end
 
 return tree

@@ -1,6 +1,7 @@
 require("board")
 local minimax = require 'minimax'
 local tree = require 'tree'
+local t = tree ()
 
 function love.load()
   love.window.maximize()
@@ -16,8 +17,9 @@ function love.load()
   board = board:create()
   
   local candidates = board:searchSquares(current_player)
-  
+  t:addNode('A',nil,0)
   buildTree(table.getn(candidates), candidates)
+  print(t:getAllNodes())
 end
 
 function love.update()
@@ -62,8 +64,11 @@ function love.keypressed(key, scancode, isrepeat)
       board:addPiece(selected, current_player)
       current_player = (current_player + 1) % 2
       local candidates = board:searchSquares(current_player)
+      t = tree ()
+      t:addNode('A',nil,0)
       buildTree(table.getn(candidates), candidates)
      end
+     print(t:getAllNodes())
   end
   
 end
@@ -74,21 +79,39 @@ function drawSelected()
   love.graphics.setColor(1,1,1) --set color to white (default)
 end
 
-function buildTree(num, candidates)
-  local t = tree ()
-  
-  t:addNode('A',nil,0)
-  
+function buildTree(num, candidates)  
   if num%2 == 0 then
-    if num/2 == 1 then
-      print('ok2')
+    if num/2 <= 1 then
       for i, candidate in ipairs(candidates) do
-        t:addNode('B' .. i, 'A', candidate)
-        print(t:getNode('B' .. i))
+        if i <= 2 then
+          t:addNode('C' .. candidate[1], 'B1', candidate)
+        else
+          t:addNode('C' .. candidate[1], 'B2', candidate)
+        end
       end
     else
-      print('ok1')
       num = num/2
+      for n = 1,num do
+        t:addNode('B' .. n, 'A', 0)
+      end
+      
+      buildTree(num, candidates)
+    end
+  else
+    if num/2 <= 1 then
+      for i, candidate in ipairs(candidates) do
+        if i <= 2 then
+          t:addNode('C' .. candidate[1], 'B1', candidate)
+        else
+          t:addNode('C' .. candidate[1], 'B2', candidate)
+        end
+      end
+    else
+      num = num/2
+      for n = 1,num+1 do
+        t:addNode('B' .. n, 'A', 0)
+      end
+    
       buildTree(num, candidates)
     end
   end
