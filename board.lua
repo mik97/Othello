@@ -1,45 +1,29 @@
+require("config")
+
 -- nil empty,  0 black, 1 white
 
 --matrix[col][row]
 board = {}
 
-pieces = {[0]= 2, [1]= 2}
-
---direction table
-directions = {
-  up = {0, -1},
-  down = {0 , 1},
-  right = {1 , 0},
-  left = {-1, 0 },
-  rup = {1, -1},
-  lup = {-1, -1},
-  rdown = {1, 1},
-  ldown = {-1, 1}
-}
-
 --candidate squares
 candidates = {}
 
---initialize board (all boards)
-function board.initialize(origin_x, origin_y, dimension, columns)
-  --square
-  x = origin_x
-  y = origin_y
-  dim = dimension
-  col = columns
-  
-  --circle (it represent the piece)
-  circle_x = x + dimension/2
-  circle_y = y + dimension/2
-  circleDim = dim/2.5
-end
+squares = {}
+
+function board:new (o)
+    o = o or {}   -- create object if user does not provide one
+    setmetatable(o, self)
+    self.__index = self
+    return o
+  end
 
 
 --create board with 4 central pieces 
 --N B
 --B N
-function board:create()
-  for i=1,dim do
+function board:initialize()
+  getSquares()
+  for i=1,config.dim do
     self[i] = {} --rows
   end
     self[4][4] = 0
@@ -49,45 +33,46 @@ function board:create()
     return self
 end
 
+
+
 --draw the board
 function board:draw()
-  local loc_x = x;
-  local loc_y = y;
+  local loc_x = config.x;
+  local loc_y = config.y;
 
     for i=1, 8 do
       for j=1, 8 do
-        love.graphics.rectangle('line', loc_x, loc_y, dim, dim)  
-        loc_y = loc_y + dim
+        love.graphics.rectangle('line', loc_x, loc_y, config.dim, config.dim)  
+        loc_y = loc_y + config.dim
       end
-        loc_x = loc_x + dim
-        loc_y = y
+        loc_x = loc_x + config.dim
+        loc_y = config.y
     end
 end
 
+
+
 --draw pieces to the board
 function board:fill()
-  for i=1, col do --columns (x)
-    for j= 1, col do --rows (y)
-      if self[i][j] == 0 then --black
-        love.graphics.circle('line', circle_x + dim*(i-1), circle_y + dim*(j-1), circleDim)
-      elseif self[i][j] == 1 then --white
-        love.graphics.circle('fill', circle_x + dim*(i-1), circle_y + dim*(j-1), circleDim)
+  local graphicalColor = {'line', 'fill'}
+  
+  for _, coor in ipairs(squares) do
+    if self[coor[1]][coor[2]]~= nil then --black
+        love.graphics.circle(graphicalColor[self[coor[1]][coor[2]] + 1], config.circle_x + config.dim*(coor[1]-1), config.circle_y + config.dim*(coor[2]-1), config.circleDim)
       end
     end
-  end
 end
+
 
 -- candidate square searching
 function board:searchSquares(color)
   candidates = {} --vuoto
   
-  for i=1, col do --cols (x)
-    for j= 1, col do --rows (y)
-      if self[i][j] == color then
-        for k, v in pairs(directions) do
-          -- pass the next square for direction
-          board:searchForDirection(i + directions[k][1], j + directions[k][2], color, k)
-        end
+  for _, coor in ipairs(squares) do
+    if self[coor[1]][coor[2]] == color then
+      for _, v in pairs(directions) do
+      -- pass the next square for direction
+      board:searchForDirection(coor[1] + v[1], coor[2] + v[2], color, v)
       end
     end
   end
@@ -97,46 +82,44 @@ end
 
 
 
-
 function board:searchForDirection( cell_x, cell_y, color, dir)
   local oppositeColor = (color + 1) % 2
   local isValid = false
 
   while checkSquare(cell_x, cell_y) and (self[cell_x][cell_y] == oppositeColor) do
-  isValid = true  
-  cell_x = cell_x + directions[dir][1] 
-  cell_y = cell_y + directions[dir][2]
+    isValid = true  
+    cell_x = cell_x + dir[1] 
+    cell_y = cell_y + dir[2]
   end
   
   if isValid == true then
-      if self[cell_x][cell_y] == nil and checkSquare(cell_x, cell_y) then
-          if contains(candidates, {cell_x, cell_y}) == false then
-            table.insert(candidates, {cell_x, cell_y})
-          end
+    if checkSquare(cell_x, cell_y) and self[cell_x][cell_y] == nil then
+      if contains(candidates, {cell_x, cell_y}) == false then
+        table.insert(candidates, {cell_x, cell_y})
       end
     end
+  end
 end
+
 
 
 -- draw candidate squares on the board
 
-
 function board:drawCandidates(color)
   --black: red color, white: green color
-  if color == 0 then love.graphics.setColor(1,0,0) else love.graphics.setColor(0,1,0) end
-  
+  if color == 0 then love.graphics.setColor(1,0,0) else love.graphics.setColor(0,1,0)
+  end
+
   for _, v in ipairs(candidates) do
-  love.graphics.rectangle('line', x + 10 + dim*(v[1]-1), y + 10 + dim*(v[2]-1), dim -20, dim-20)  
+  love.graphics.rectangle('line', config.x + 10 + config.dim*(v[1]-1), config.y + 10 + config.dim*(v[2]-1), config.dim -20, config.dim-20)  
   end
   
   love.graphics.setColor(1,1,1) --set color to white (default)
 end
 
-
 --coordinates are {x, y} aka {columns, row}
 function board:addPiece( coor, color)
   self[coor[1]][coor[2]] = color
-  pieces[color] = pieces[color] + 1 
   board:revertPieces(coor, color)
 end
 
@@ -148,7 +131,9 @@ function board:isCandidate(coor)
   return false
 end
 
---coor = coordinata square dove si vuole inserire il pezzo
+
+--coor = coordinata della square dove si vuole inserire il pezzo
+
 function board:revertPieces (coor, color)
   for k, v in pairs(directions) do
     board:revertForDirection(coor[1]+ v[1], coor[2]+ v[2], color, v)
@@ -166,13 +151,31 @@ function board:revertForDirection( cell_x, cell_y, color, dir)
     cell_x = cell_x + dir[1]
     cell_y = cell_y + dir[2]
   end
-  
+
   if checkSquare(cell_x, cell_y) and self[cell_x][cell_y] == color then
     for _ , k in ipairs(toRevert) do
       self[k[1]][k[2]] = color
-      pieces[color] = pieces[color] + 1 
-      pieces[oppositeColor] = pieces[oppositeColor] - 1 
     end
+  end
+end
+
+function board:countPieces()
+  local pieces= {0, 0}   -- [1] = black, [2] = white
+  for i=1, config.col do
+    for j=1, config.col do
+      if self[i][j] ~= nil then
+        pieces[self[i][j] + 1] =  pieces[self[i][j] + 1] + 1
+      end
+    end
+  end
+  return pieces
+end
+
+function getSquares()
+  for i=1, config.col do --cols (x)
+      for j= 1, config.col do --rows (y)
+        table.insert(squares, {i, j})
+      end
   end
 end
 
@@ -185,6 +188,7 @@ function contains(tabl, element)
   end
   return false
 end
+
 
 function checkSquare(cell_x, cell_y)
   return not (cell_x > 8 or cell_x < 1 or cell_y > 8 or cell_y < 1)

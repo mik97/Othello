@@ -2,19 +2,24 @@ require("board")
 local minimax = require 'minimax'
 local tree = require 'tree'
 local t = tree ()
+require("config")
 
 function love.load()
   love.window.maximize()
+  drawCandidates = true
+  
   current_player = 0
   origin_x = 50;
   origin_y = 50;
   dim = 70;
   
+  players_colors = {'BLACK', 'WHITE'}
   -- selected = {x, y}: x is the column and y the row
   selected = {1,1}
   
-  board.initialize(origin_x, origin_y, dim, 8)
-  board = board:create()
+  config:set(origin_x, origin_y, dim, 8)
+  board = board:new()
+  board:initialize()
   
   local candidates = board:searchSquares(current_player)
   t:addNode('A',nil,0)
@@ -29,8 +34,11 @@ end
 function love.draw()
   board:draw()
   board:fill()
-  board:drawCandidates(current_player)
+  if drawCandidates then board:drawCandidates(current_player) end
   drawSelected()
+  drawCounter()
+  drawTurn()
+  showShortcutsInfo()
 end
 
 function love.keypressed(key, scancode, isrepeat)
@@ -57,10 +65,10 @@ function love.keypressed(key, scancode, isrepeat)
       selected[2] = selected[2] - 1
     end
   end
- 
   
   if key == "return" then
     if board:isCandidate(selected) then
+      local pieces
       board:addPiece(selected, current_player)
       current_player = (current_player + 1) % 2
       local candidates = board:searchSquares(current_player)
@@ -69,6 +77,10 @@ function love.keypressed(key, scancode, isrepeat)
       buildTree(table.getn(candidates), candidates)
      end
      print(t:getAllNodes())
+  end
+  
+  if key == "s" then
+    drawCandidates = not drawCandidates 
   end
   
 end
@@ -115,4 +127,18 @@ function buildTree(num, candidates)
       buildTree(num, candidates)
     end
   end
+end
+
+function drawCounter()
+  local pieces = board:countPieces()
+  love.graphics.print(("Black pieces: " .. pieces[1]), 50 + 60 * 10, 50)
+  love.graphics.print(("White pieces: " .. pieces[2]), 50 + 60 * 10, 70)
+end
+
+function drawTurn()
+    love.graphics.print((players_colors[current_player + 1] .. ' PLAYER TURN'), 50 + 60 * 10, 100)
+end
+
+function showShortcutsInfo()
+    love.graphics.print('S: show/unshow possible moves', 50 + 60 * 10, 50 + 60 * 8)
 end
