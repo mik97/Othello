@@ -70,9 +70,9 @@ function board:searchSquares(color)
   
   for _, coor in ipairs(squares) do
     if self[coor[1]][coor[2]] == color then
-      for k, v in pairs(directions) do
+      for _, v in pairs(directions) do
       -- pass the next square for direction
-      board:searchForDirection(coor[1] + directions[k][1], coor[2] + directions[k][2], color, k)
+      board:searchForDirection(coor[1] + v[1], coor[2] + v[2], color, v)
       end
     end
   end
@@ -86,12 +86,12 @@ function board:searchForDirection( cell_x, cell_y, color, dir)
 
   while checkSquare(cell_x, cell_y) and (self[cell_x][cell_y] == oppositeColor) do
     isValid = true  
-    cell_x = cell_x + directions[dir][1] 
-    cell_y = cell_y + directions[dir][2]
+    cell_x = cell_x + dir[1] 
+    cell_y = cell_y + dir[2]
   end
   
   if isValid == true then
-    if self[cell_x][cell_y] == nil and checkSquare(cell_x, cell_y) then
+    if checkSquare(cell_x, cell_y) and self[cell_x][cell_y] == nil then
       if contains(candidates, {cell_x, cell_y}) == false then
         table.insert(candidates, {cell_x, cell_y})
       end
@@ -116,7 +116,6 @@ function board:drawCandidates(color)
 end
 
 --coordinates are {x, y} aka {columns, row}
-
 function board:addPiece( coor, color)
   self[coor[1]][coor[2]] = color
   board:revertPieces(coor, color)
@@ -159,7 +158,7 @@ function board:revertForDirection( cell_x, cell_y, color, dir)
 end
 
 function board:countPieces()
-  local pieces= {0, 0}
+  local pieces= {0, 0}   -- [1] = black, [2] = white
   for i=1, config.col do
     for j=1, config.col do
       if self[i][j] ~= nil then
@@ -192,5 +191,4 @@ end
 function checkSquare(cell_x, cell_y)
   return not (cell_x > 8 or cell_x < 1 or cell_y > 8 or cell_y < 1)
 end
-
 

@@ -28,6 +28,7 @@ function love.draw()
   board:fill()
   board:drawCandidates(current_player)
   drawSelected()
+  drawCounter()
 end
 
 function love.keypressed(key, scancode, isrepeat)
@@ -73,4 +74,11 @@ function drawSelected()
   love.graphics.setColor(0,1,1)
   love.graphics.rectangle('line', origin_x + 20 + dim*(selected[1]-1), origin_y + 20 + dim*(selected[2]-1), dim - 40, dim - 40)  
   love.graphics.setColor(1,1,1) --set color to white (default)
+end
+
+function drawCounter()
+local pieces = board:countPieces()
+love.graphics.print(("Black pieces: " .. pieces[1]), 50 + 60 * 10, 50)
+love.graphics.print(("White pieces: " .. pieces[2]), 50 + 60 * 10, 70)
+
 end
