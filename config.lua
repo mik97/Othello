@@ -11,6 +11,7 @@ directions = {
   ldown = {-1, 1}
 }
 
+
 function config:set(origin_x, origin_y, dimension, columns)
   config.x = origin_x
   config.y = origin_y
