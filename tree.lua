@@ -67,4 +67,13 @@ function tree:getAllNodes()
   end
 end
 
+function tree:isEmpty()
+  if self.nodes == {} then
+    return true
+  else
+    return false
+  end
+  
+end
+
 return tree

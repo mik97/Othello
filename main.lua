@@ -2,6 +2,7 @@ require("board")
 local minimax = require 'minimax'
 local tree = require 'tree'
 local t = tree ()
+local name = 65
 require("config")
 
 function love.load()
@@ -22,8 +23,9 @@ function love.load()
   board:initialize()
   
   local candidates = board:searchSquares(current_player)
-  t:addNode('A',nil,0)
-  buildTree(table.getn(candidates), candidates)
+  t:addNode(string.char(name),nil,0)
+  name = name + 1
+  buildTree(candidates)
   print(t:getAllNodes())
 end
 
@@ -73,8 +75,10 @@ function love.keypressed(key, scancode, isrepeat)
       current_player = (current_player + 1) % 2
       local candidates = board:searchSquares(current_player)
       t = tree ()
-      t:addNode('A',nil,0)
-      buildTree(table.getn(candidates), candidates)
+      name = 65
+      t:addNode(string.char(name),nil,0)
+      name = name + 1
+      buildTree(candidates)
      end
      print(t:getAllNodes())
   end
@@ -91,7 +95,7 @@ function drawSelected()
   love.graphics.setColor(1,1,1) --set color to white (default)
 end
 
-function buildTree(num, candidates)  
+--[[function buildTree(num, candidates)  
   if num%2 == 0 then
     if num/2 <= 1 then
       for i, candidate in ipairs(candidates) do
@@ -104,7 +108,7 @@ function buildTree(num, candidates)
     else
       num = num/2
       for n = 1,num do
-        t:addNode('B' .. n, 'A', 0)
+        t:addNode(string.char(66) .. n, 'A', 0)
       end
       
       buildTree(num, candidates)
@@ -121,13 +125,13 @@ function buildTree(num, candidates)
     else
       num = num/2
       for n = 1,num+1 do
-        t:addNode('B' .. n, 'A', 0)
+        t:addNode(string.char(66) .. n, 'A', 0)
       end
     
       buildTree(num, candidates)
     end
   end
-end
+end]]
 
 function drawCounter()
   local pieces = board:countPieces()
@@ -141,4 +145,55 @@ end
 
 function showShortcutsInfo()
     love.graphics.print('S: show/unshow possible moves', 50 + 60 * 10, 50 + 60 * 8)
+end
+
+function buildTree(candidates)
+  local num = table.getn(candidates)
+  local depth = calculateDepth(num)
+  
+  for i=1, depth do
+    local nodeIndex = 1
+    if i == depth then
+      for n, candidate in ipairs(candidates) do 
+        if i == 1 then
+          t:addNode(string.char(name) .. n, string.char(name-1), candidate)
+        else
+          t:addNode(string.char(name) .. n, string.char(name-1) .. calculateNodeIndex(nodeIndex, i), candidate)
+        end
+      end
+    else if i == 1 then
+      for n=1, 2^i do
+        t:addNode(string.char(name) .. n, string.char(name-1), 0)
+      end
+    else if i == depth-1 then
+      nodeTotal = num/2 + num%2
+      for n=1,nodeTotal do
+        t:addNode(string.char(name) .. n, string.char(name-1) .. calculateNodeIndex(nodeIndex, i), 0)
+      end
+    else if i > 1 and i < depth-1 then
+      for n=1, 2^i do
+        t:addNode(string.char(name) .. n, string.char(name-1) .. calculateNodeIndex(nodeIndex, i), 0)
+      end
+    end
+    end
+  end
+  name = name + 1
+end
+end
+end
+
+function calculateNodeIndex(value, index)
+  if index%2 == 0 then
+    value = value + 1
+  end
+  return value
+end
+
+function calculateDepth(num)
+  local count = 0
+  while (num/2+num%2) >= 1 do
+    count = count + 1
+    num = num/2
+  end
+  return count-1
 end
