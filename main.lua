@@ -20,17 +20,16 @@ function love.load()
   selected = {1,1}
   
   config:set(origin_x, origin_y, dim, 8)
-  board = board:new()
-  board:initialize()
-  
-  local candidates = board:searchSquares(current_player)
+  b = board:new()
+  b:initialize()
+  local candidates = b:searchSquares(current_player)
   calculateFutureScore(candidates, current_player)
   t:addNode(string.char(name),nil,0)
   name = name + 1
   calculateNodes(table.getn(candidates),1)
   buildTree(candidates, table.getn(nodesNumber))
-  --print(t:heuristic(t:getNode('C1'))[3][current_player+1])
-  print("Node to choose",minimax(t:getNode('A'),t,3))
+  print(t:getAllNodes())
+  print("Node to choose",minimax(t:getNode('A'),t,3,current_player))
   resetNodesNumber()
 end
 
@@ -39,9 +38,9 @@ function love.update()
 end
 
 function love.draw()
-  board:draw()
-  board:fill()
-  if drawCandidates then board:drawCandidates(current_player) end
+  b:draw()
+  b:fill()
+  if drawCandidates then b:drawCandidates(current_player) end
   drawSelected()
   drawCounter()
   drawTurn()
@@ -74,11 +73,11 @@ function love.keypressed(key, scancode, isrepeat)
   end
   
   if key == "return" then
-    if board:isCandidate(selected) then
+    if b:isCandidate(selected) then
       local pieces
-      board:addPiece(selected, current_player)
+      b:addPiece(selected, current_player)
       current_player = (current_player + 1) % 2
-      local candidates = board:searchSquares(current_player)
+      local candidates = b:searchSquares(current_player)
       calculateFutureScore(candidates, current_player)
       t = tree ()
       name = 65
@@ -86,7 +85,12 @@ function love.keypressed(key, scancode, isrepeat)
       name = name + 1
       calculateNodes(table.getn(candidates),1)
       buildTree(candidates, table.getn(nodesNumber))
-      print("Node to choose",minimax(t:getNode('A'),t,3))
+      print(t:getAllNodes())
+      if(table.getn(candidates) == 2) then
+        print("Node to choose",minimax(t:getNode('A'),t,1,current_player))
+      else
+        print("Node to choose",minimax(t:getNode('A'),t,3,current_player))
+      end
       resetNodesNumber()
      end
   end
@@ -104,7 +108,7 @@ function drawSelected()
 end
 
 function drawCounter()
-  local pieces = board:countPieces()
+  local pieces = b:countPieces()
   love.graphics.print(("Black pieces: " .. pieces[1]), 50 + 60 * 10, 50)
   love.graphics.print(("White pieces: " .. pieces[2]), 50 + 60 * 10, 70)
 end
@@ -174,7 +178,7 @@ end
 function calculateFutureScore(candidates, color)
   print(table.getn(candidates))
   for i=1, table.getn(candidates) do
-    local tempBoard = table.shallow_copy(board)
+    local tempBoard = table.shallow_copy(b)
     print("Candidate ",candidates[i][1],candidates[i][2])
     tempBoard:addPiece({candidates[i][1],candidates[i][2]}, color)
     local score = tempBoard:countPieces()
@@ -189,8 +193,12 @@ end
 function table.shallow_copy(t)
   local t2 = board:new()
   t2:initialize()
-  for k,v in pairs(t) do
-    t2[k] = v
+  for i=1, 8 do
+    for j=1, 8 do
+      --print("T2",t2[i][j])
+      --print("T",t[i][j])
+      t2[1][i][j] = t[1][i][j]
+    end
   end
   return t2
 end

@@ -7,9 +7,9 @@ board = {}
 
 --candidate squares
 candidates = {}
-
 squares = {}
-toRevert = {}
+
+--toRevert = {}
 
 function board:new (o)
     o = o or {}   -- create object if user does not provide one
@@ -24,17 +24,24 @@ function board:new (o)
 --B N
 function board:initialize()
   getSquares()
-  for i=1,config.dim do
-    self[i] = {} --rows
-  end
-    self[4][4] = 0
-    self[5][5] = 0
-    self[5][4] = 1
-    self[4][5] = 1
-    return self
+  local gameboard = createBoard()
+  local toRevert = {}
+  table.insert(self, gameboard)
+  table.insert(self, toRevert)
+  return self
 end
 
-
+function createBoard()
+local b = {}
+  for i=1,config.dim do
+    b[i] = {} --rows
+  end
+    b[4][4] = 0
+    b[5][5] = 0
+    b[5][4] = 1
+    b[4][5] = 1
+    return b
+end
 
 --draw the board
 function board:draw()
@@ -58,8 +65,8 @@ function board:fill()
   local graphicalColor = {'line', 'fill'}
   
   for _, coor in ipairs(squares) do
-    if self[coor[1]][coor[2]]~= nil then --black
-        love.graphics.circle(graphicalColor[self[coor[1]][coor[2]] + 1], config.circle_x + config.dim*(coor[1]-1), config.circle_y + config.dim*(coor[2]-1), config.circleDim)
+    if self[1][coor[1]][coor[2]]~= nil then --black
+        love.graphics.circle(graphicalColor[self[1][coor[1]][coor[2]] + 1], config.circle_x + config.dim*(coor[1]-1), config.circle_y + config.dim*(coor[2]-1), config.circleDim)
       end
     end
 end
@@ -70,10 +77,10 @@ function board:searchSquares(color)
   candidates = {} --vuoto
   
   for _, coor in ipairs(squares) do
-    if self[coor[1]][coor[2]] == color then
+    if self[1][coor[1]][coor[2]] == color then
       for _, v in pairs(directions) do
       -- pass the next square for direction
-      board:searchForDirection(coor[1] + v[1], coor[2] + v[2], color, v)
+      self:searchForDirection(coor[1] + v[1], coor[2] + v[2], color, v)
       end
     end
   end
@@ -85,14 +92,14 @@ function board:searchForDirection( cell_x, cell_y, color, dir)
   local oppositeColor = (color + 1) % 2
   local isValid = false
 
-  while checkSquare(cell_x, cell_y) and (self[cell_x][cell_y] == oppositeColor) do
+  while checkSquare(cell_x, cell_y) and (self[1][cell_x][cell_y] == oppositeColor) do
     isValid = true  
     cell_x = cell_x + dir[1] 
     cell_y = cell_y + dir[2]
   end
   
   if isValid == true then
-    if checkSquare(cell_x, cell_y) and self[cell_x][cell_y] == nil then
+    if checkSquare(cell_x, cell_y) and self[1][cell_x][cell_y] == nil then
       if contains(candidates, {cell_x, cell_y}) == false then
         table.insert(candidates, {cell_x, cell_y})
       end
@@ -116,16 +123,19 @@ end
 
 --coordinates are {x, y} aka {columns, row}
 function board:addPiece( coor, color)
-  self[coor[1]][coor[2]] = color
-  toRevert={}
-  board:revertPieces(coor, color)
+  self[1][coor[1]][coor[2]] = color
+  --for _ , k in ipairs(self[2]) do
+  --    print("REVERT",k[1],k[2])
+  --end
+  self[2]={}
+  self:revertPieces(coor, color)
 end
 
 function board:removePiece( coor, color)
-  self[coor[1]][coor[2]] = nil
+  self[1][coor[1]][coor[2]] = nil
   
-  for _,k in ipairs(toRevert) do
-    self[k[1]][k[2]] = color
+  for _,k in ipairs(self[2]) do
+    self[1][k[1]][k[2]] = color
   end
   
 end
@@ -141,25 +151,26 @@ end
 --coor = coordinata della square dove si vuole inserire il pezzo
 
 function board:revertPieces (coor, color)
+  
   for k, v in pairs(directions) do
-    board:revertForDirection(coor[1]+ v[1], coor[2]+ v[2], color, v)
+    self:revertForDirection(coor[1]+ v[1], coor[2]+ v[2], color, v)
   end
 end
 
 function board:revertForDirection( cell_x, cell_y, color, dir)
   local oppositeColor = (color + 1) % 2
-  --toRevert={}
+  self[2]={}
   
-  while checkSquare(cell_x, cell_y) and (self[cell_x][cell_y] == oppositeColor) do
-   table.insert(toRevert, {cell_x, cell_y})
+  while checkSquare(cell_x, cell_y) and (self[1][cell_x][cell_y] == oppositeColor) do
+   table.insert(self[2], {cell_x, cell_y})
     -- calculate position next square
     cell_x = cell_x + dir[1]
     cell_y = cell_y + dir[2]
   end
 
-  if checkSquare(cell_x, cell_y) and self[cell_x][cell_y] == color then
-    for _ , k in ipairs(toRevert) do
-      self[k[1]][k[2]] = color
+  if checkSquare(cell_x, cell_y) and self[1][cell_x][cell_y] == color then
+    for _ , k in ipairs(self[2]) do
+      self[1][k[1]][k[2]] = color
     end
   end
 end
@@ -168,8 +179,8 @@ function board:countPieces()
   local pieces= {0, 0}   -- [1] = black, [2] = white
   for i=1, config.col do
     for j=1, config.col do
-      if self[i][j] ~= nil then
-        pieces[self[i][j] + 1] =  pieces[self[i][j] + 1] + 1
+      if self[1][i][j] ~= nil then
+        pieces[self[1][i][j] + 1] =  pieces[self[1][i][j] + 1] + 1
       end
     end
   end
