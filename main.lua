@@ -29,6 +29,8 @@ function love.load()
   name = name + 1
   calculateNodes(table.getn(candidates),1)
   buildTree(candidates, table.getn(nodesNumber))
+  --print(t:heuristic(t:getNode('C1'))[3][current_player+1])
+  print("Node to choose",minimax(t:getNode('A'),t,3))
   resetNodesNumber()
 end
 
@@ -84,6 +86,7 @@ function love.keypressed(key, scancode, isrepeat)
       name = name + 1
       calculateNodes(table.getn(candidates),1)
       buildTree(candidates, table.getn(nodesNumber))
+      print("Node to choose",minimax(t:getNode('A'),t,3))
       resetNodesNumber()
      end
   end

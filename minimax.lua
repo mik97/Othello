@@ -4,7 +4,7 @@
 -- Internal recursive Minimax search
 local function minimax(tree, node, depth, maximize, bestScore)
   if depth == 0 or tree:isLeaf(node) then
-    return tree:heuristic(node)
+    return tree:heuristic(node)[3][1]
   end
   local children = tree:children(node)
   if maximize then
