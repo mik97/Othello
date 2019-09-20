@@ -9,6 +9,7 @@ board = {}
 candidates = {}
 
 squares = {}
+toRevert = {}
 
 function board:new (o)
     o = o or {}   -- create object if user does not provide one
@@ -80,8 +81,6 @@ function board:searchSquares(color)
   return candidates
 end
 
-
-
 function board:searchForDirection( cell_x, cell_y, color, dir)
   local oppositeColor = (color + 1) % 2
   local isValid = false
@@ -101,8 +100,6 @@ function board:searchForDirection( cell_x, cell_y, color, dir)
   end
 end
 
-
-
 -- draw candidate squares on the board
 
 function board:drawCandidates(color)
@@ -120,9 +117,18 @@ end
 --coordinates are {x, y} aka {columns, row}
 function board:addPiece( coor, color)
   self[coor[1]][coor[2]] = color
+  toRevert={}
   board:revertPieces(coor, color)
 end
 
+function board:removePiece( coor, color)
+  self[coor[1]][coor[2]] = nil
+  
+  for _,k in ipairs(toRevert) do
+    self[k[1]][k[2]] = color
+  end
+  
+end
 
 function board:isCandidate(coor)
   for k, v in ipairs(candidates) do
@@ -140,10 +146,9 @@ function board:revertPieces (coor, color)
   end
 end
 
-
 function board:revertForDirection( cell_x, cell_y, color, dir)
   local oppositeColor = (color + 1) % 2
-  local toRevert = {}
+  --toRevert={}
   
   while checkSquare(cell_x, cell_y) and (self[cell_x][cell_y] == oppositeColor) do
    table.insert(toRevert, {cell_x, cell_y})

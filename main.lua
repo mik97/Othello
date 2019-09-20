@@ -3,6 +3,7 @@ local minimax = require 'minimax'
 local tree = require 'tree'
 local t = tree ()
 local name = 65
+local nodesNumber = {}
 require("config")
 
 function love.load()
@@ -23,10 +24,12 @@ function love.load()
   board:initialize()
   
   local candidates = board:searchSquares(current_player)
+  calculateFutureScore(candidates, current_player)
   t:addNode(string.char(name),nil,0)
   name = name + 1
-  buildTree(candidates)
-  print(t:getAllNodes())
+  calculateNodes(table.getn(candidates),1)
+  buildTree(candidates, table.getn(nodesNumber))
+  resetNodesNumber()
 end
 
 function love.update()
@@ -74,13 +77,15 @@ function love.keypressed(key, scancode, isrepeat)
       board:addPiece(selected, current_player)
       current_player = (current_player + 1) % 2
       local candidates = board:searchSquares(current_player)
+      calculateFutureScore(candidates, current_player)
       t = tree ()
       name = 65
       t:addNode(string.char(name),nil,0)
       name = name + 1
-      buildTree(candidates)
+      calculateNodes(table.getn(candidates),1)
+      buildTree(candidates, table.getn(nodesNumber))
+      resetNodesNumber()
      end
-     print(t:getAllNodes())
   end
   
   if key == "s" then
@@ -94,44 +99,6 @@ function drawSelected()
   love.graphics.rectangle('line', origin_x + 20 + dim*(selected[1]-1), origin_y + 20 + dim*(selected[2]-1), dim - 40, dim - 40)  
   love.graphics.setColor(1,1,1) --set color to white (default)
 end
-
---[[function buildTree(num, candidates)  
-  if num%2 == 0 then
-    if num/2 <= 1 then
-      for i, candidate in ipairs(candidates) do
-        if i <= 2 then
-          t:addNode('C' .. candidate[1], 'B1', candidate)
-        else
-          t:addNode('C' .. candidate[1], 'B2', candidate)
-        end
-      end
-    else
-      num = num/2
-      for n = 1,num do
-        t:addNode(string.char(66) .. n, 'A', 0)
-      end
-      
-      buildTree(num, candidates)
-    end
-  else
-    if num/2 <= 1 then
-      for i, candidate in ipairs(candidates) do
-        if i <= 2 then
-          t:addNode('C' .. candidate[1], 'B1', candidate)
-        else
-          t:addNode('C' .. candidate[1], 'B2', candidate)
-        end
-      end
-    else
-      num = num/2
-      for n = 1,num+1 do
-        t:addNode(string.char(66) .. n, 'A', 0)
-      end
-    
-      buildTree(num, candidates)
-    end
-  end
-end]]
 
 function drawCounter()
   local pieces = board:countPieces()
@@ -147,53 +114,80 @@ function showShortcutsInfo()
     love.graphics.print('S: show/unshow possible moves', 50 + 60 * 10, 50 + 60 * 8)
 end
 
-function buildTree(candidates)
-  local num = table.getn(candidates)
-  local depth = calculateDepth(num)
-  
-  for i=1, depth do
-    local nodeIndex = 1
-    if i == depth then
-      for n, candidate in ipairs(candidates) do 
-        if i == 1 then
-          t:addNode(string.char(name) .. n, string.char(name-1), candidate)
-        else
-          t:addNode(string.char(name) .. n, string.char(name-1) .. calculateNodeIndex(nodeIndex, i), candidate)
+function buildTree(candidates, numNodes)
+  local nIndex = 1
+  if table.getn(candidates) == nodesNumber[numNodes] then
+    for n=1, 2 do
+       t:addNode(string.char(name) .. n, string.char(name-1), 0)
+    end
+  else
+    for n=1, nodesNumber[numNodes] do
+      if(name-1 == 65) then
+        t:addNode(string.char(name) .. n, string.char(name-1), 0)
+      else
+        t:addNode(string.char(name) .. n, string.char(name-1) .. nIndex, 0)
+        if n%2 == 0 and n > 1 then
+          nIndex = nIndex+1
         end
       end
-    else if i == 1 then
-      for n=1, 2^i do
-        t:addNode(string.char(name) .. n, string.char(name-1), 0)
-      end
-    else if i == depth-1 then
-      nodeTotal = num/2 + num%2
-      for n=1,nodeTotal do
-        t:addNode(string.char(name) .. n, string.char(name-1) .. calculateNodeIndex(nodeIndex, i), 0)
-      end
-    else if i > 1 and i < depth-1 then
-      for n=1, 2^i do
-        t:addNode(string.char(name) .. n, string.char(name-1) .. calculateNodeIndex(nodeIndex, i), 0)
+    end
+    
+    name = name + 1
+    
+    if numNodes-1 > 0 then
+      numNodes = numNodes-1
+      buildTree(candidates, numNodes)
+    else
+      nIndex = 1
+      for n, candidate in ipairs(candidates) do
+        t:addNode(string.char(name) .. n, string.char(name-1)..nIndex, candidate)
+          if n%2 == 0 and n > 1 then
+              nIndex = nIndex+1
+          end
       end
     end
+  end
+end
+
+function calculateNodes(num, index)
+  local num1,num2 = math.modf(num/2)
+  local num3 = (num1 + (num2 > 0.5 and 1 or 0))
+  local nodeTotal = num3 + num%2
+  
+  if not(nodeTotal == 1) then
+    nodesNumber[index] = nodeTotal
+    calculateNodes(nodeTotal,index+1)
+  end
+end
+
+function resetNodesNumber()
+  for i, n in ipairs(nodesNumber) do
+    if i < table.getn(nodesNumber) then
+      table.remove(nodesNumber, i)
     end
   end
-  name = name + 1
-end
-end
 end
 
-function calculateNodeIndex(value, index)
-  if index%2 == 0 then
-    value = value + 1
+function calculateFutureScore(candidates, color)
+  print(table.getn(candidates))
+  for i=1, table.getn(candidates) do
+    local tempBoard = table.shallow_copy(board)
+    print("Candidate ",candidates[i][1],candidates[i][2])
+    tempBoard:addPiece({candidates[i][1],candidates[i][2]}, color)
+    local score = tempBoard:countPieces()
+    print("ScoreN", score[1])
+    print("ScoreB", score[2])
+    candidates[i][3] = score
+    print("Candidate score: ", candidates[i][3][color+1],"\n\n")
+    tempBoard:removePiece({candidates[i][1],candidates[i][2]}, (color+1)%2)
   end
-  return value
 end
 
-function calculateDepth(num)
-  local count = 0
-  while (num/2+num%2) >= 1 do
-    count = count + 1
-    num = num/2
+function table.shallow_copy(t)
+  local t2 = board:new()
+  t2:initialize()
+  for k,v in pairs(t) do
+    t2[k] = v
   end
-  return count-1
+  return t2
 end
