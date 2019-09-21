@@ -23,14 +23,18 @@ function love.load()
   b = board:new()
   b:initialize()
   local candidates = b:searchSquares(current_player)
-  calculateFutureScore(candidates, current_player)
-  t:addNode(string.char(name),nil,0)
-  name = name + 1
-  calculateNodes(table.getn(candidates),1)
-  buildTree(candidates, table.getn(nodesNumber))
-  print(t:getAllNodes())
-  print("Node to choose",minimax(t:getNode('A'),t,3,current_player))
-  resetNodesNumber()
+  if table.getn(candidates) > 0 then
+    calculateFutureScore(candidates, current_player)
+    t:addNode(string.char(name),nil,0)
+    name = name + 1
+    calculateNodes(table.getn(candidates),1)
+    local depth = table.getn(nodesNumber) + 2
+    buildTree(candidates, table.getn(nodesNumber))
+    print(t:getAllNodes())
+    print("Node to choose",minimax(t:getNode('A'),t,depth,current_player))
+    resetNodesNumber()
+    print("NodesNumber",table.getn(nodesNumber))
+  end
 end
 
 function love.update()
@@ -78,20 +82,24 @@ function love.keypressed(key, scancode, isrepeat)
       b:addPiece(selected, current_player)
       current_player = (current_player + 1) % 2
       local candidates = b:searchSquares(current_player)
-      calculateFutureScore(candidates, current_player)
-      t = tree ()
-      name = 65
-      t:addNode(string.char(name),nil,0)
-      name = name + 1
-      calculateNodes(table.getn(candidates),1)
-      buildTree(candidates, table.getn(nodesNumber))
-      print(t:getAllNodes())
-      if(table.getn(candidates) == 2) then
-        print("Node to choose",minimax(t:getNode('A'),t,1,current_player))
-      else
-        print("Node to choose",minimax(t:getNode('A'),t,3,current_player))
+      if table.getn(candidates) > 0 then
+        calculateFutureScore(candidates, current_player)
+        t = tree ()
+        name = 65
+        t:addNode(string.char(name),nil,0)
+        name = name + 1
+        calculateNodes(table.getn(candidates),1)
+        local depth = table.getn(nodesNumber) + 2
+        buildTree(candidates, table.getn(nodesNumber))
+        print(t:getAllNodes())
+        if(table.getn(candidates) == 2) then
+          print("Node to choose",minimax(t:getNode('A'),t,depth,current_player))
+        else
+          print("Node to choose",minimax(t:getNode('A'),t,depth,current_player))
+        end
+        resetNodesNumber()
+        print("NodesNumber",table.getn(nodesNumber))
       end
-      resetNodesNumber()
      end
   end
   
@@ -124,8 +132,8 @@ end
 function buildTree(candidates, numNodes)
   local nIndex = 1
   if table.getn(candidates) == nodesNumber[numNodes] then
-    for n=1, 2 do
-       t:addNode(string.char(name) .. n, string.char(name-1), 0)
+    for n,candidate in ipairs(candidates) do
+       t:addNode(string.char(name) .. n, string.char(name-1), candidate)
     end
   else
     for n=1, nodesNumber[numNodes] do
@@ -140,7 +148,7 @@ function buildTree(candidates, numNodes)
     end
     
     name = name + 1
-    
+    print("NumNodes",numNodes)
     if numNodes-1 > 0 then
       numNodes = numNodes-1
       buildTree(candidates, numNodes)
@@ -161,17 +169,15 @@ function calculateNodes(num, index)
   local num3 = (num1 + (num2 > 0.5 and 1 or 0))
   local nodeTotal = num3 + num%2
   
-  if not(nodeTotal == 1) then
+  if nodeTotal ~= 1 then
     nodesNumber[index] = nodeTotal
     calculateNodes(nodeTotal,index+1)
   end
 end
 
 function resetNodesNumber()
-  for i, n in ipairs(nodesNumber) do
-    if i < table.getn(nodesNumber) then
-      table.remove(nodesNumber, i)
-    end
+  for i=2, table.getn(nodesNumber) do
+    table.remove(nodesNumber, i)
   end
 end
 
