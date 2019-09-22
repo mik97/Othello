@@ -3,7 +3,6 @@
 
 -- Internal recursive Minimax search
 local function minimax(tree, node, depth, maximize, current_player, bestScore)
-  --print("Current",current_player)
   if depth == 0 or tree:isLeaf(node) then
     return tree:heuristic(node)[3][current_player+1]
   end

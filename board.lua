@@ -5,8 +5,7 @@ require("config")
 --matrix[col][row]
 board = {}
 
---candidate squares
-candidates = {}
+--squares
 squares = {}
 
 --toRevert = {}
@@ -26,8 +25,10 @@ function board:initialize()
   getSquares()
   local gameboard = createBoard()
   local toRevert = {}
+  local candidates = {}
   table.insert(self, gameboard)
   table.insert(self, toRevert)
+  table.insert(self, candidates)
   return self
 end
 
@@ -74,7 +75,7 @@ end
 
 -- candidate square searching
 function board:searchSquares(color)
-  candidates = {} --vuoto
+  self[3] = {} --vuoto
   
   for _, coor in ipairs(squares) do
     if self[1][coor[1]][coor[2]] == color then
@@ -85,7 +86,7 @@ function board:searchSquares(color)
     end
   end
   
-  return candidates
+  return self[3]
 end
 
 function board:searchForDirection( cell_x, cell_y, color, dir)
@@ -100,8 +101,8 @@ function board:searchForDirection( cell_x, cell_y, color, dir)
   
   if isValid == true then
     if checkSquare(cell_x, cell_y) and self[1][cell_x][cell_y] == nil then
-      if contains(candidates, {cell_x, cell_y}) == false then
-        table.insert(candidates, {cell_x, cell_y})
+      if contains(self[3], {cell_x, cell_y}) == false then
+        table.insert(self[3], {cell_x, cell_y})
       end
     end
   end
@@ -114,7 +115,7 @@ function board:drawCandidates(color)
   if color == 0 then love.graphics.setColor(1,0,0) else love.graphics.setColor(0,1,0)
   end
 
-  for _, v in ipairs(candidates) do
+  for _, v in ipairs(self[3]) do
   love.graphics.rectangle('line', config.x + 10 + config.dim*(v[1]-1), config.y + 10 + config.dim*(v[2]-1), config.dim -20, config.dim-20)  
   end
   
@@ -141,7 +142,7 @@ function board:removePiece( coor, color)
 end
 
 function board:isCandidate(coor)
-  for k, v in ipairs(candidates) do
+  for k, v in ipairs(self[3]) do
     if (v[1] == coor[1] and v[2] == coor[2]) then return true end
   end
   return false
