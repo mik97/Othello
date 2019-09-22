@@ -4,6 +4,7 @@ local tree = require 'tree'
 local t = tree ()
 local name = 65
 local nodesNumber = {}
+local score
 local standardDepth = 2
 require("config")
 
@@ -28,12 +29,17 @@ function love.load()
   nodesNumber[standardDepth] = table.getn(candidates)
   
   if table.getn(candidates) > 0 then
-    --calculateFutureScore(candidates, current_player)
+    print("Nodes Number dimension",table.getn(nodesNumber))
     t:addNode(string.char(name),nil,0)
     name = name+1
-    buildTree(t:getNode(string.char(name-1)), standardDepth, current_player, candidates, 0)
+    local tempBoard = table.shallow_copy(b)
+    buildTree(t:getNode(string.char(name-1)), standardDepth, tempBoard, current_player, candidates, 0)
     t:getAllNodes()
-    
+    local c = t:children('B1')
+    --print(t:getNode('C1').value[1])
+    print("Node to choose",minimax(t:getNode('A'), t, standardDepth, current_player))
+    print("\n")
+    nodesNumber={}
   end
 end
 
@@ -77,6 +83,7 @@ function love.keypressed(key, scancode, isrepeat)
   end
   if key == "return" then
     if b:isCandidate(selected) then
+      print("Nodes Number dimension",table.getn(nodesNumber))
       local pieces
       b:addPiece(selected, current_player)
       current_player = (current_player + 1) % 2
@@ -88,10 +95,12 @@ function love.keypressed(key, scancode, isrepeat)
         name = 65
         t:addNode(string.char(name),nil,0)
         name = name + 1
-        buildTree(t:getNode(string.char(name-1)), standardDepth, current_player, candidates, 0)
+        local tempBoard = table.shallow_copy(b)
+        buildTree(t:getNode(string.char(name-1)), standardDepth, tempBoard, current_player, candidates, 0)
         t:getAllNodes()
-        --print("Node to choose",minimax(t:getNode('A'),t,depth,current_player))
+        print("\nNode to choose\n",minimax(t:getNode('A'), t, standardDepth, current_player))
       end
+      nodesNumber={}
      end
   end
   
@@ -122,35 +131,42 @@ function showShortcutsInfo()
 end
 
 -- Build Tree
-function buildTree(node, depth, color, candidates, startIndex)
+function buildTree(node, depth, tempBoard, color, candidates, startIndex)
   
   for n, candidate in ipairs(candidates) do
     if depth ~= 1 then
       t:addNode(string.char(name) .. (n+startIndex), node.name, 0)
     else
+      table.insert(candidate, score)
       t:addNode(string.char(name) .. (n+startIndex), node.name, candidate)
     end
     
-    print(t:getAllNodes())
-    
     if depth-1 > 0 and n+startIndex ~= 1 then
-      calculateFutureScore(string.char(name) .. (n+startIndex), candidate, color, depth, nodesNumber[depth-1])
+      calculateFutureScore(string.char(name) .. (n+startIndex), candidate, color, depth, tempBoard, nodesNumber[depth-1])
       name = name - 1
     elseif n+startIndex == 1 and depth-1 ~= 0 then
-      print("Current n",n)
-      calculateFutureScore(string.char(name) .. n, candidate, color, depth, 0)
+      calculateFutureScore(string.char(name) .. n, candidate, color, depth, tempBoard, 0)
       name = name - 1
     end
   end
 end
 
-function calculateFutureScore(nodesName, candidate, color, depth, startIndex)
+function calculateFutureScore(nodesName, candidate, color, depth, tempBoard, startIndex)
   depth = depth - 1
   name = name + 1
-  local tempBoard = table.shallow_copy(b)
   
-  tempBoard:addPiece({candidate[1],candidate[2]}, color)
-  local candidates = tempBoard:searchSquares((color+1)%2)
+  local tBoard = table.shallow_copy(tempBoard)
+  tBoard:addPiece({candidate[1],candidate[2]}, color)
+  if depth == 1 then
+    score = tBoard:countPieces()
+    candidate[3] = score
+  end
+  
+  candidates = tBoard:searchSquares((color+1)%2)
+  
+  if depth == 1 then
+    print("Candidate",table.getn(candidates))
+  end
   
   if nodesNumber[depth] ~= nil then
     nodesNumber[depth] = nodesNumber[depth]+table.getn(candidates)
@@ -159,7 +175,7 @@ function calculateFutureScore(nodesName, candidate, color, depth, startIndex)
     nodesNumber[depth] = table.getn(candidates)
   end
   
-  buildTree(t:getNode(nodesName), depth, (color+1)%2, candidates, startIndex)
+  buildTree(t:getNode(nodesName), depth, tBoard, (color+1)%2, candidates, startIndex)
 end
 
 function table.shallow_copy(t)

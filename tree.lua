@@ -64,7 +64,11 @@ end
 function tree:getAllNodes()
   for i, node in ipairs(self.nodes) do
     for i, child in ipairs(node.children) do
-      print("Name --> ", node.name, " Child --> ", child.name," Value -->", child.value)
+      if child.value ~= 0 then
+        print("Name --> ", node.name, " Child --> ", child.name," Value --> x ", child.value[1], " y ", child.value[2])
+      else
+        print("Name --> ", node.name, " Child --> ", child.name," Value -->", child.value)
+      end
     end
   end
 end
