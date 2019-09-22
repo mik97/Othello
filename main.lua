@@ -4,7 +4,7 @@ local tree = require 'tree'
 local t = tree ()
 local name = 65
 local nodesNumber = {}
-local standardDepth = 3
+local standardDepth = 2
 require("config")
 
 function love.load()
@@ -26,20 +26,13 @@ function love.load()
   print("Current Player",current_player)
   local candidates = b:searchSquares(current_player)
   nodesNumber[standardDepth] = table.getn(candidates)
+  
   if table.getn(candidates) > 0 then
     --calculateFutureScore(candidates, current_player)
     t:addNode(string.char(name),nil,0)
     name = name+1
-    --name = name + 1
-    --local nNumber = {}
-    --calculateNodes(nNumber, table.getn(candidates),1)
-    --local depth = table.getn(nNumber) + 2
-    buildTree(t:getNode(string.char(name-1)), standardDepth, current_player, candidates)
+    buildTree(t:getNode(string.char(name-1)), standardDepth, current_player, candidates, 0)
     t:getAllNodes()
-    --print(t:getAllNodes())
-    --print("Node to choose",minimax(t:getNode('A'),t,depth,current_player))
-    --resetNodesNumber()
-    --print("NodesNumber",table.getn(nNumber))
     
   end
 end
@@ -89,21 +82,15 @@ function love.keypressed(key, scancode, isrepeat)
       current_player = (current_player + 1) % 2
       print("Current Player",current_player)
       local candidates = b:searchSquares(current_player)
+      nodesNumber[standardDepth] = table.getn(candidates)
       if table.getn(candidates) > 0 then
-        calculateFutureScore(candidates, current_player)
         t = tree ()
         name = 65
         t:addNode(string.char(name),nil,0)
         name = name + 1
-        local nNumber = {}
-        calculateNodes(nNumber, table.getn(candidates),1)
-        print(table.getn(nNumber))
-        local depth = table.getn(nNumber) + 2
-        --buildTree(candidates, table.getn(nNumber), nNumber)
-        
-        print("Node to choose",minimax(t:getNode('A'),t,depth,current_player))
-        print("NodesNumber",table.getn(nNumber))
-        --resetNodesNumber()
+        buildTree(t:getNode(string.char(name-1)), standardDepth, current_player, candidates, 0)
+        t:getAllNodes()
+        --print("Node to choose",minimax(t:getNode('A'),t,depth,current_player))
       end
      end
   end
@@ -135,32 +122,44 @@ function showShortcutsInfo()
 end
 
 -- Build Tree
-function buildTree(node, depth, color, candidates)
-  print(nodesNumber[depth])
+function buildTree(node, depth, color, candidates, startIndex)
+  
   for n, candidate in ipairs(candidates) do
-    if n==1 or depth > 1 then
-      t:addNode(string.char(name) .. n, node.name, 0)
+    if depth ~= 1 then
+      t:addNode(string.char(name) .. (n+startIndex), node.name, 0)
     else
-      t:addNode(string.char(name) .. nodesNumber[depth], node.name, 0)
+      t:addNode(string.char(name) .. (n+startIndex), node.name, candidate)
     end
     
     print(t:getAllNodes())
     
-    if(depth ~= 0) then
-      calculateFutureScore(string.char(name) .. n, candidate, color, depth)
+    if depth-1 > 0 and n+startIndex ~= 1 then
+      calculateFutureScore(string.char(name) .. (n+startIndex), candidate, color, depth, nodesNumber[depth-1])
+      name = name - 1
+    elseif n+startIndex == 1 and depth-1 ~= 0 then
+      print("Current n",n)
+      calculateFutureScore(string.char(name) .. n, candidate, color, depth, 0)
       name = name - 1
     end
   end
 end
 
-function calculateFutureScore(nodesName, candidate, color, depth)
+function calculateFutureScore(nodesName, candidate, color, depth, startIndex)
   depth = depth - 1
   name = name + 1
   local tempBoard = table.shallow_copy(b)
+  
   tempBoard:addPiece({candidate[1],candidate[2]}, color)
-  candidates = tempBoard:searchSquares((color+1)%2)
-  nodesNumber[depth] = table.getn(candidates)
-  buildTree(t:getNode(nodesName), depth, (color+1)%2, candidates)
+  local candidates = tempBoard:searchSquares((color+1)%2)
+  
+  if nodesNumber[depth] ~= nil then
+    nodesNumber[depth] = nodesNumber[depth]+table.getn(candidates)
+    
+  else
+    nodesNumber[depth] = table.getn(candidates)
+  end
+  
+  buildTree(t:getNode(nodesName), depth, (color+1)%2, candidates, startIndex)
 end
 
 function table.shallow_copy(t)
