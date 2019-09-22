@@ -10,13 +10,27 @@ local function minimax(tree, node, depth, maximize, current_player, bestScore)
   if maximize then
     bestScore = -math.huge
     for i, child in ipairs(children) do
-      bestScore = math.max(bestScore, minimax(tree, child, depth - 1, false, current_player))
+      bScore = math.max(bestScore, minimax(tree, child, depth - 1, false, current_player))
+      print("BESTSCORE",bestScore)
+      print("BSCORE",bScore)
+      if tree:parent(child) == 'A' then
+        if bestScore < bScore then
+          tree:getNode(tree:parent(child)).value = child.value
+        end
+      end
+      bestScore = bScore
     end
     return bestScore
   else
     bestScore = math.huge
     for i, child in ipairs(children) do
-      bestScore = math.min(bestScore, minimax(tree, child, depth - 1, true, current_player))
+      bScore = math.min(bestScore, minimax(tree, child, depth - 1, true, current_player))
+      if tree:parent(child) == 'A' then
+        if bestScore > bScore then
+          tree:getNode(tree:parent(child)).value = child.value
+        end
+      end
+      bestScore = bScore
     end
     return bestScore
   end

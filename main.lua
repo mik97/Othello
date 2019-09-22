@@ -35,9 +35,9 @@ function love.load()
     local tempBoard = table.shallow_copy(b)
     buildTree(t:getNode(string.char(name-1)), standardDepth, tempBoard, current_player, candidates, 0)
     t:getAllNodes()
-    local c = t:children('B1')
-    --print(t:getNode('C1').value[1])
-    print("Node to choose",minimax(t:getNode('A'), t, standardDepth, current_player))
+    minimax(t:getNode('A'), t, standardDepth, current_player)
+    print(t:getNode('A').value)
+    print("\nNode to choose x: " .. t:getNode('A').value[1],"y: " .. t:getNode('A').value[2])
     print("\n")
     nodesNumber={}
   end
@@ -98,7 +98,8 @@ function love.keypressed(key, scancode, isrepeat)
         local tempBoard = table.shallow_copy(b)
         buildTree(t:getNode(string.char(name-1)), standardDepth, tempBoard, current_player, candidates, 0)
         t:getAllNodes()
-        print("\nNode to choose\n",minimax(t:getNode('A'), t, standardDepth, current_player))
+        minimax(t:getNode('A'), t, standardDepth, current_player)
+        print("\nNode to choose x:\n",t:getNode('A').value[1],"y:",t:getNode('A').value[2])
       end
       nodesNumber={}
      end
@@ -135,7 +136,7 @@ function buildTree(node, depth, tempBoard, color, candidates, startIndex)
   
   for n, candidate in ipairs(candidates) do
     if depth ~= 1 then
-      t:addNode(string.char(name) .. (n+startIndex), node.name, 0)
+      t:addNode(string.char(name) .. (n+startIndex), node.name, candidate)
     else
       table.insert(candidate, score)
       t:addNode(string.char(name) .. (n+startIndex), node.name, candidate)
