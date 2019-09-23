@@ -34,7 +34,7 @@ end
 
 function createBoard()
 local b = {}
-  for i=1,config.dim do
+  for i=1,config.col do
     b[i] = {} --rows
   end
     b[4][4] = 0
@@ -59,10 +59,8 @@ function board:draw()
     end
 end
 
-
-
 --draw pieces to the board
-function board:fill()
+function board:drawPieces()
   local graphicalColor = {'line', 'fill'}
   
   for _, coor in ipairs(squares) do
@@ -129,6 +127,7 @@ function board:addPiece( coor, color)
   --    print("REVERT",k[1],k[2])
   --end
   self[2]={}
+  
   self:revertPieces(coor, color)
 end
 
