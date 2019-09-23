@@ -18,7 +18,7 @@ local selected
 local player_types = {'PC', 'HUMAN'}
 local players_colors = {'BLACK', 'WHITE'}
 
-local players
+local players = {}
 local turnHandler
 
 function love.load()
@@ -26,23 +26,17 @@ function love.load()
   drawCandidates = true
   
   current_player = 0
-  origin_x = 50;
-  origin_y = 50;
-  dim = 70;
+  origin_x = 50
+  origin_y = 50
   
+  dim =70
  
   -- selected = {x, y}: x is the column and y the row
   selected = {1,1}
   
   config:set(origin_x, origin_y, dim, 8)
-  
   b = board:new()
-  
   b:initialize()
-  
-  players = {humanTurnHandler(), humanTurnHandler()}
-  
-  startGame()
 end
 
 function love.update()
@@ -92,6 +86,11 @@ function love.keypressed(key, scancode, isrepeat)
   if key == "s" then
     drawCandidates = not drawCandidates 
   end
+  
+  if key == "g" then
+    startGame()
+  end
+
 end
 
 function drawSelected()
@@ -111,7 +110,8 @@ function drawTurn()
 end
 
 function showShortcutsInfo()
-    love.graphics.print('S: show/unshow possible moves', 50 + 60 * 10, 50 + 60 * 8)
+  love.graphics.print('G: game start', 50 + 60 * 10, 50 + 60 * 7.5)
+  love.graphics.print('S: show/unshow possible moves', 50 + 60 * 10, 50 + 60 * 8)
 end
 
 -- Build Tree
