@@ -1,8 +1,8 @@
 require("board")
 require("config")
-require("mobdebug").on()
-require("mobdebug").coro()
-require("mobdebug").start()
+--require("mobdebug").on()
+--require("mobdebug").coro()
+--require("mobdebug").start()
 
 local minimax = require 'minimax'
 local tree = require 'tree'
@@ -10,16 +10,17 @@ local t = tree ()
 local name = 65
 local nodesNumber = {}
 local score
-local standardDepth = 2
+local standardDepth = 3
 
 local finished = false
 local selected
 
-local player_types = {'PC', 'HUMAN'}
+local player_types = {'HUMAN', 'PC'}
 local players_colors = {'BLACK', 'WHITE'}
 
 local players = {}
 local turnHandler
+--local toResume = false
 
 function love.load()
   love.window.maximize()
@@ -40,7 +41,6 @@ function love.load()
 end
 
 function love.update()
-
 end
 
 function love.draw()
@@ -78,9 +78,16 @@ function love.keypressed(key, scancode, isrepeat)
   end
   if key == "return" and player_types[current_player+1] == 'HUMAN' then
     if b:isCandidate(selected) then
-     coroutine.resume(players[current_player+1])
-     coroutine.resume(turnHandler)
+    b:addPiece(selected, current_player)
+    --coroutine.resume(players[current_player+1])
+    coroutine.resume(turnHandler)    
     end
+  end
+  
+  if key == "a" and player_types[current_player+1] == 'PC'then
+    b:addPiece(chosen, current_player)
+    coroutine.resume(turnHandler)
+   --end
   end
   
   if key == "s" then
@@ -149,7 +156,7 @@ function calculateFutureScore(nodesName, candidate, color, depth, tempBoard, sta
   candidates = tBoard:searchSquares((color+1)%2)
   
   if depth == 1 then
-    print("Candidate",table.getn(candidates))
+    --print("Candidate",table.getn(candidates))
   end
   
   if nodesNumber[depth] ~= nil then
@@ -184,15 +191,20 @@ function startGame()
         if player_types[current_player+1] == 'HUMAN' then
           players[current_player+1] = humanTurnHandler()
           coroutine.resume(players[current_player+1]) --quando si stoppa si ferma anche il turno
-          coroutine.yield()
         else
           players[current_player+1] = pcTurnHandler()
           coroutine.resume(players[current_player+1])
         end
-        
+        coroutine.yield()
+        current_player = (current_player+1) % 2
       end
     end)
+  
     coroutine.resume(turnHandler)
+    
+    --[[if player_types[current_player] == 'PC' then
+    toResume = true    
+    end ]]--
 end
 
 function pcTurnHandler()
@@ -208,12 +220,12 @@ function pcTurnHandler()
           name = name + 1
           local tempBoard = table.shallow_copy(b)
           buildTree(t:getNode(string.char(name-1)), standardDepth, tempBoard, current_player, candidates, 0)
-          --t:getAllNodes()
           minimax(t:getNode('A'), t, standardDepth, current_player)
           print("\nNode to choose x:\n",t:getNode('A').value[1],"y:",t:getNode('A').value[2])
-          b:addPiece({t:getNode('A').value[1], t:getNode('A').value[2] },  current_player)
+          --b:addPiece({t:getNode('A').value[1], t:getNode('A').value[2] },  current_player)
+          chosen = {t:getNode('A').value[1], t:getNode('A').value[2] }
           nodesNumber={}
-          current_player = (current_player+1) % 2
+        --  current_player = (current_player+1) % 2
         else
         finished = true
       end
@@ -227,9 +239,9 @@ function humanTurnHandler()
         local candidates = b:searchSquares(current_player)
         if table.getn(candidates) > 0 then
         print('i am a human')
-        coroutine.yield()
-        b:addPiece(selected, current_player)
-        current_player = (current_player+1)%2
+        --coroutine.yield()
+        --b:addPiece(selected, current_player)
+       -- current_player = (current_player+1)%2
         else
         finished = true
       end
