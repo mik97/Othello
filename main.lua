@@ -1,4 +1,9 @@
 require("board")
+require("config")
+require("mobdebug").on()
+require("mobdebug").coro()
+require("mobdebug").start()
+
 local minimax = require 'minimax'
 local tree = require 'tree'
 local t = tree ()
@@ -6,7 +11,15 @@ local name = 65
 local nodesNumber = {}
 local score
 local standardDepth = 2
-require("config")
+
+local finished = false
+local selected
+
+local player_types = {'PC', 'HUMAN'}
+local players_colors = {'BLACK', 'WHITE'}
+
+local players
+local turnHandler
 
 function love.load()
   love.window.maximize()
@@ -17,30 +30,19 @@ function love.load()
   origin_y = 50;
   dim = 70;
   
-  players_colors = {'BLACK', 'WHITE'}
+ 
   -- selected = {x, y}: x is the column and y the row
   selected = {1,1}
   
   config:set(origin_x, origin_y, dim, 8)
-  b = board:new()
-  b:initialize()
-  print("Current Player",current_player)
-  local candidates = b:searchSquares(current_player)
-  nodesNumber[standardDepth] = table.getn(candidates)
   
-  if table.getn(candidates) > 0 then
-    print("Nodes Number dimension",table.getn(nodesNumber))
-    t:addNode(string.char(name),nil,0)
-    name = name+1
-    local tempBoard = table.shallow_copy(b)
-    buildTree(t:getNode(string.char(name-1)), standardDepth, tempBoard, current_player, candidates, 0)
-    t:getAllNodes()
-    minimax(t:getNode('A'), t, standardDepth, current_player)
-    print(t:getNode('A').value)
-    print("\nNode to choose x: " .. t:getNode('A').value[1],"y: " .. t:getNode('A').value[2])
-    print("\n")
-    nodesNumber={}
-  end
+  b = board:new()
+  
+  b:initialize()
+  
+  players = {humanTurnHandler(), humanTurnHandler()}
+  
+  startGame()
 end
 
 function love.update()
@@ -49,7 +51,7 @@ end
 
 function love.draw()
   b:draw()
-  b:fill()
+  b:drawPieces()
   if drawCandidates then b:drawCandidates(current_player) end
   drawSelected()
   drawCounter()
@@ -58,7 +60,6 @@ function love.draw()
 end
 
 function love.keypressed(key, scancode, isrepeat)
-   
   if key == "left" then
     if selected[1] > 1 then
       selected[1] = selected[1] - 1
@@ -81,34 +82,16 @@ function love.keypressed(key, scancode, isrepeat)
       selected[2] = selected[2] - 1
     end
   end
-  if key == "return" then
+  if key == "return" and player_types[current_player+1] == 'HUMAN' then
     if b:isCandidate(selected) then
-      print("Nodes Number dimension",table.getn(nodesNumber))
-      local pieces
-      b:addPiece(selected, current_player)
-      current_player = (current_player + 1) % 2
-      print("Current Player",current_player)
-      local candidates = b:searchSquares(current_player)
-      nodesNumber[standardDepth] = table.getn(candidates)
-      if table.getn(candidates) > 0 then
-        t = tree ()
-        name = 65
-        t:addNode(string.char(name),nil,0)
-        name = name + 1
-        local tempBoard = table.shallow_copy(b)
-        buildTree(t:getNode(string.char(name-1)), standardDepth, tempBoard, current_player, candidates, 0)
-        t:getAllNodes()
-        minimax(t:getNode('A'), t, standardDepth, current_player)
-        print("\nNode to choose x:\n",t:getNode('A').value[1],"y:",t:getNode('A').value[2])
-      end
-      nodesNumber={}
-     end
+     coroutine.resume(players[current_player+1])
+     coroutine.resume(turnHandler)
+    end
   end
   
   if key == "s" then
     drawCandidates = not drawCandidates 
   end
-  
 end
 
 function drawSelected()
@@ -190,4 +173,65 @@ function table.shallow_copy(t)
     end
   end
   return t2
+end
+
+function startGame()
+  --coroutine.resume(players[1]) --inizia il nero
+  turnHandler = coroutine.create(
+    function()
+      while finished ~= true do
+      --procedo creando una routine in base al tipo
+        if player_types[current_player+1] == 'HUMAN' then
+          players[current_player+1] = humanTurnHandler()
+          coroutine.resume(players[current_player+1]) --quando si stoppa si ferma anche il turno
+          coroutine.yield()
+        else
+          players[current_player+1] = pcTurnHandler()
+          coroutine.resume(players[current_player+1])
+        end
+        
+      end
+    end)
+    coroutine.resume(turnHandler)
+end
+
+function pcTurnHandler()
+    return coroutine.create(
+      function()
+        local candidates = b:searchSquares(current_player)
+        if table.getn(candidates) > 0 then
+          print('i am a robot')
+          nodesNumber[standardDepth] = table.getn(candidates)
+          t = tree ()
+          name = 65
+          t:addNode(string.char(name),nil,0)
+          name = name + 1
+          local tempBoard = table.shallow_copy(b)
+          buildTree(t:getNode(string.char(name-1)), standardDepth, tempBoard, current_player, candidates, 0)
+          --t:getAllNodes()
+          minimax(t:getNode('A'), t, standardDepth, current_player)
+          print("\nNode to choose x:\n",t:getNode('A').value[1],"y:",t:getNode('A').value[2])
+          b:addPiece({t:getNode('A').value[1], t:getNode('A').value[2] },  current_player)
+          nodesNumber={}
+          current_player = (current_player+1) % 2
+        else
+        finished = true
+      end
+      end
+      )
+  end
+
+function humanTurnHandler()
+    return coroutine.create(
+      function()
+        local candidates = b:searchSquares(current_player)
+        if table.getn(candidates) > 0 then
+        print('i am a human')
+        coroutine.yield()
+        b:addPiece(selected, current_player)
+        current_player = (current_player+1)%2
+        else
+        finished = true
+      end
+    end )
 end
