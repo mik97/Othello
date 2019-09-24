@@ -1,8 +1,5 @@
 require("board")
 require("config")
---require("mobdebug").on()
---require("mobdebug").coro()
---require("mobdebug").start()
 
 local minimax = require 'minimax'
 local tree = require 'tree'
@@ -10,7 +7,7 @@ local t = tree ()
 local name = 65
 local nodesNumber = {}
 local score
-local standardDepth = 2
+local standardDepth = 3
 
 local finished = false
 local selected
@@ -22,7 +19,31 @@ local players = {}
 
 local turnHandler
 
-function love.load()
+function parseArgs(args)
+  for i , arg in pairs(args) do
+    if arg == "-debug"  then require("mobdebug").on(); require("mobdebug").coro(); require("mobdebug").start()
+    elseif arg == "-PCvPC"  then
+      player_types = {'PC', 'PC'}
+    elseif arg == "-PLvPL"  then
+      player_types = {'HUMAN', 'HUMAN'}
+    elseif arg == "-PLvPC" or arg == "-PCvPL" then
+      player_types = {'HUMAN', 'PC'}
+    elseif arg == "-d" then
+      standardDepth = tonumber(args[i+1])
+      if standardDepth < 2 then exit('Minimum Difficult: 2') end
+      if standardDepth > 3 then print('WARNING: Computation could be very slow') end
+    end
+  end
+end
+
+function exit(exitError)
+  print(exitError or '')
+  os.exit(exitError and -1 or 0)
+end
+
+function love.load(args)
+  parseArgs(args)
+  print(unpack(player_types))
   love.window.maximize()
   drawCandidates = true
   
@@ -53,47 +74,49 @@ function love.draw()
   drawTurn()
   showShortcutsInfo()
 end
-
+gameStarted = false
 function love.keypressed(key, scancode, isrepeat)
-  if key == "left" then
-    if selected[1] > 1 then
-      selected[1] = selected[1] - 1
+  if gameStarted then
+    if key == "left" then
+      if selected[1] > 1 then
+        selected[1] = selected[1] - 1
+      end
+    end
+    
+    if key == "right" then
+      if selected[1] < 8 then
+        selected[1] = selected[1] + 1
+      end
+    end
+    if key == "down" then
+      if selected[2] < 8 then
+        selected[2] = selected[2] + 1 
+      end
+    end
+    
+    if key == "up" then
+      if selected[2] > 1 then
+        selected[2] = selected[2] - 1
+      end
+    end
+    if key == "return" and player_types[current_player+1] == 'HUMAN' then
+      if b:isCandidate(selected) then
+      b:addPiece(selected, current_player)
+      coroutine.resume(turnHandler)    
+      end
+    end
+    
+    if player_types[1] == 'HUMAN' and player_types[current_player+1] == 'PC' or player_types[1] == "PC" and key == "a" then
+        b:addPiece(chosen, current_player)
+        coroutine.resume(turnHandler)
+    end
+    
+    if key == "s" then
+      drawCandidates = not drawCandidates 
     end
   end
-  
-  if key == "right" then
-    if selected[1] < 8 then
-      selected[1] = selected[1] + 1
-    end
-  end
-  if key == "down" then
-    if selected[2] < 8 then
-      selected[2] = selected[2] + 1 
-    end
-  end
-  
-  if key == "up" then
-    if selected[2] > 1 then
-      selected[2] = selected[2] - 1
-    end
-  end
-  if key == "return" and player_types[current_player+1] == 'HUMAN' then
-    if b:isCandidate(selected) then
-    b:addPiece(selected, current_player)
-    coroutine.resume(turnHandler)    
-    end
-  end
-  
-  if key == "a" and player_types[current_player+1] == 'PC'then
-    b:addPiece(chosen, current_player)
-    coroutine.resume(turnHandler)
-  end
-  
-  if key == "s" then
-    drawCandidates = not drawCandidates 
-  end
-  
   if key == "g" then
+    gameStarted = true
     startGame()
   end
 
@@ -126,6 +149,7 @@ function drawTurn()
         winner = players_colors[2]
       end
       love.graphics.print((winner .. ' PLAYER WINS'), 50 + 60 * 10, 100)
+      started = false
     end
   end
 end
@@ -201,14 +225,15 @@ function startGame()
         current_player = (current_player+1) % 2
       end
     end)
-    coroutine.resume(turnHandler)
+  coroutine.resume(turnHandler)
 end
 
 function pcTurnHandler()
     return coroutine.create(
       function()
         local candidates = b:searchSquares(current_player)
-        if table.getn(candidates) > 0 then
+        
+        if table.getn(candidates) > 1 then
           nodesNumber[standardDepth] = table.getn(candidates)
           name = 65          
           t = tree ()
@@ -219,9 +244,11 @@ function pcTurnHandler()
           minimax(t:getNode('A'), t, standardDepth, current_player)
           chosen = {t:getNode('A').value[1], t:getNode('A').value[2] }
           nodesNumber={}
+        elseif table.getn(candidates) == 1 then
+          chosen = {candidates[1][1] , candidates[1][2] }
         else
-        finished = true
-      end
+          finished = true
+        end
       end
       )
   end
@@ -232,7 +259,7 @@ function humanTurnHandler()
         local candidates = b:searchSquares(current_player)
         if table.getn(candidates) > 0 then
         else
-        finished = true
+          finished = true
       end
-    end )
+    end)
 end

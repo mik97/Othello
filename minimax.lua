@@ -2,13 +2,13 @@
 -- See: http://en.wikipedia.org/wiki/Minimax
 
 -- Internal recursive Minimax search
-local function minimax(tree, node, depth, maximize, current_player, bestScore)
+local function minimax(tree, node, depth, maximize, current_player)
   if depth == 0 or tree:isLeaf(node) then
     return tree:heuristic(node)[3][current_player+1]
   end
   local children = tree:children(node)
   if maximize then
-    bestScore = -math.huge
+    local bestScore = -math.huge
     for i, child in ipairs(children) do
       bScore = math.max(bestScore, minimax(tree, child, depth - 1, false, current_player))
      -- print("BESTSCORE",bestScore)
@@ -22,7 +22,7 @@ local function minimax(tree, node, depth, maximize, current_player, bestScore)
     end
     return bestScore
   else
-    bestScore = math.huge
+    local bestScore = math.huge
     for i, child in ipairs(children) do
       bScore = math.min(bestScore, minimax(tree, child, depth - 1, true, current_player))
       if tree:parent(child) == 'A' then
@@ -41,8 +41,8 @@ end
 -- tree : the search tree
 -- depth : the maximum depth of search
 return function(node, tree, depth, current_player)
-  local bestScore
-  return minimax(tree, node, depth, true, current_player, bestScore)
+  -- local bestScore
+  return minimax(tree, node, depth, true, current_player)
 end
 
 

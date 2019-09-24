@@ -78,8 +78,8 @@ function board:searchSquares(color)
   for _, coor in ipairs(squares) do
     if self[1][coor[1]][coor[2]] == color then
       for _, v in pairs(directions) do
-      -- pass the next square for direction
-      self:searchForDirection(coor[1] + v[1], coor[2] + v[2], color, v)
+        -- pass the next square for direction
+        self:searchForDirection(coor[1] + v[1], coor[2] + v[2], color, v)
       end
     end
   end
