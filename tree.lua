@@ -1,16 +1,12 @@
--- Search tree class handler implementation
-
 local PATH = (...):gsub('tree$','')
 local class = require (PATH .. 'class')
 
 local tree = class ()
 
--- Tree initialization
 function tree:initialize()
   self.nodes = {}
 end
 
--- Adds a node in the tree
 function tree:addNode(name, parent, value)
   assert(not self.nodes[name], 'node already exist')
   local node = {

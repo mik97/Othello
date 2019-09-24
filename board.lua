@@ -1,14 +1,12 @@
 require("config")
 
 -- nil empty,  0 black, 1 white
-
 --matrix[col][row]
 board = {}
 
 --squares
 squares = {}
 
---toRevert = {}
 
 function board:new (o)
     o = o or {}   -- create object if user does not provide one
@@ -107,7 +105,6 @@ function board:searchForDirection( cell_x, cell_y, color, dir)
 end
 
 -- draw candidate squares on the board
-
 function board:drawCandidates(color)
   --black: red color, white: green color
   if color == 0 then love.graphics.setColor(1,0,0) else love.graphics.setColor(0,1,0)
@@ -123,9 +120,6 @@ end
 --coordinates are {x, y} aka {columns, row}
 function board:addPiece( coor, color)
   self[1][coor[1]][coor[2]] = color
-  --for _ , k in ipairs(self[2]) do
-  --    print("REVERT",k[1],k[2])
-  --end
   self[2]={}
   
   self:revertPieces(coor, color)
@@ -148,10 +142,8 @@ function board:isCandidate(coor)
 end
 
 
---coor = coordinata della square dove si vuole inserire il pezzo
-
+--coor = square where add the piece
 function board:revertPieces (coor, color)
-  
   for k, v in pairs(directions) do
     self:revertForDirection(coor[1]+ v[1], coor[2]+ v[2], color, v)
   end
@@ -176,7 +168,8 @@ function board:revertForDirection( cell_x, cell_y, color, dir)
 end
 
 function board:countPieces()
-  local pieces= {0, 0}   -- [1] = black, [2] = white
+  -- [1] = black, [2] = white
+  local pieces= {0, 0}
   for i=1, config.col do
     for j=1, config.col do
       if self[1][i][j] ~= nil then

@@ -1,5 +1,3 @@
--- Minimalistic class implementation
-
 local class = function(attr)
   local klass = attr or {}
   klass.__index = klass
